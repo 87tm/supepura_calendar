@@ -129,59 +129,56 @@
   // ② localStorage からデータ取得
   let events = [];
 
-try{
-  events = JSON.parse(localStorage.getItem("rawEvents") || "[]");
-}catch(e){
-  events = [];
+async function loadEvent(){
+
+  try{
+    events = await fetch("https://event-api.t87.workers.dev/")
+      .then(r => r.json());
+  }catch(e){
+    events = [];
+  }
+
+  showEvent();
 }
 
-  // ③ 該当イベントを探す
-  const event = events.find(e => e.id === eventId);
+function showEvent(){
 
+  const event = events.find(e => e.id === eventId);
   const content = document.getElementById("content");
 
-  function extractTicketInfo(text = "") {
-  const saleMatch = text.match(/🎫(.+?)より販売開始/);
-  const linkMatch = text.match(/(https?:\/\/[^\s]+)/);
-
-  return {
-    sale: saleMatch ? saleMatch[1].trim() : null,
-    link: linkMatch ? linkMatch[1] : null
-  };
-}
-
   if (!event) {
-  content.textContent = "イベントが見つかりませんでした。";
-} else {
+    content.textContent = "イベントが見つかりませんでした。";
+    return;
+  }
 
-  // ① 画像を先に表示
+  const ticket = extractTicketInfo(event.rawText);
+
+  // 画像
   if (event.images && event.images.length > 0) {
-  const slider = document.getElementById("imageSlider");
-  const dots = document.getElementById("imageDots");
+    const slider = document.getElementById("imageSlider");
+    const dots = document.getElementById("imageDots");
 
-  slider.innerHTML = event.images
-    .map(src => `<img src="${src}">`)
-    .join("");
+    slider.innerHTML = event.images
+      .map(src => `<img src="${src}">`)
+      .join("");
 
-  dots.innerHTML = event.images
-    .map((_, i) =>
-      `<div class="dot ${i === 0 ? "active" : ""}"></div>`
-    )
-    .join("");
+    dots.innerHTML = event.images
+      .map((_, i) =>
+        `<div class="dot ${i === 0 ? "active" : ""}"></div>`
+      )
+      .join("");
 
-  slider.addEventListener("scroll", () => {
-    const index = Math.round(
+    slider.addEventListener("scroll", () => {
+      const index = Math.round(
         slider.scrollLeft / slider.clientWidth
       ) || 0;
 
-    document.querySelectorAll(".dot").forEach((dot, i) => {
-      dot.classList.toggle("active", i === index);
+      document.querySelectorAll(".dot").forEach((dot, i) => {
+        dot.classList.toggle("active", i === index);
+      });
     });
-  });
-}
-const ticket = extractTicketInfo(event.rawText);
+  }
 
-  // ② テキスト情報
   content.innerHTML = `
     <h1>${event.title}</h1>
 
@@ -219,18 +216,21 @@ const ticket = extractTicketInfo(event.rawText);
     ` : ""}
 
     ${ticket.sale || ticket.link ? `
-  <div class="section">
-    <div class="label">🎫 チケット</div>
-    <div class="box">
-      ${ticket.sale ? `<div class="ticket-sale">販売開始：${ticket.sale}</div>` : ""}
-      ${ticket.link ? `<a href="${ticket.link}" target="_blank">${ticket.link}</a>` : ""}
-    </div>
-  </div>
-` : ""}
+      <div class="section">
+        <div class="label">🎫 チケット</div>
+        <div class="box">
+          ${ticket.sale ? `<div class="ticket-sale">販売開始：${ticket.sale}</div>` : ""}
+          ${ticket.link ? `<a href="${ticket.link}" target="_blank">${ticket.link}</a>` : ""}
+        </div>
+      </div>
+    ` : ""}
 
     <a href="index.html" class="back">← カレンダーに戻る</a>
   `;
 }
+
+loadEvent();
+
 </script>
 
 </body>
