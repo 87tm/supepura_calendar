@@ -26,65 +26,79 @@
 
 <script>
 let events = [];
-try{
-  events = JSON.parse(localStorage.getItem("rawEvents") || "[]");
-}catch(e){
-  events = [];
-}
-const container = document.getElementById("past-events");
 
-// 今日（00:00 기준）
-const today = new Date();
-today.setHours(0,0,0,0);
+async function loadPastEvents(){
 
-// 過去イベントだけ抽出
-const pastEvents = events
-  .filter(e => e.date && new Date(e.date) < today)
-  .sort((a, b) => new Date(b.date) - new Date(a.date));
+  try{
+    events = await fetch("https://event-api.t87.workers.dev/")
+      .then(r => r.json());
+  }catch(e){
+    events = [];
+  }
 
-if (pastEvents.length === 0) {
-  container.textContent = "過去のイベントはありません。";
+  renderPast();
 }
 
-pastEvents.forEach(event => {
-  const item = document.createElement("div");
-  item.className = "event-item";
+function renderPast(){
 
-  const row = document.createElement("div");
-  row.className = "event-row";
+  const container = document.getElementById("past-events");
 
-  const img = document.createElement("img");
-  img.className = "event-thumb";
-  if (event.images && event.images[0]) {
-    img.src = event.images[0];
-} else {
-    img.style.display = "none";
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const pastEvents = events
+    .filter(e => e.date && new Date(e.date) < today)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  if (pastEvents.length === 0) {
+    container.textContent = "過去のイベントはありません。";
+    return;
+  }
+
+  pastEvents.forEach(event => {
+
+    const item = document.createElement("div");
+    item.className = "event-item";
+
+    const row = document.createElement("div");
+    row.className = "event-row";
+
+    const img = document.createElement("img");
+    img.className = "event-thumb";
+
+    if (event.images && event.images[0]) {
+      img.src = event.images[0];
+    } else {
+      img.style.display = "none";
+    }
+
+    img.onerror = () => {
+      img.style.display = "none";
+    };
+
+    const info = document.createElement("div");
+
+    const title = document.createElement("h3");
+    title.textContent = event.title;
+
+    const date = document.createElement("div");
+    date.textContent = event.date;
+    date.style.fontSize = "13px";
+    date.style.color = "#666";
+
+    info.appendChild(title);
+    info.appendChild(date);
+
+    row.appendChild(info);
+    row.appendChild(img);
+    item.appendChild(row);
+
+    container.appendChild(item);
+
+  });
 }
-  img.onerror = () => {
-    img.style.display = "none";
-};
 
-  const info = document.createElement("div");
-
-  const title = document.createElement("h3");
-  title.textContent = event.title;
-
-  const date = document.createElement("div");
-  date.textContent = event.date;
-  date.style.fontSize = "13px";
-  date.style.color = "#666";
-
-  info.appendChild(title);
-  info.appendChild(date);
-
-  row.appendChild(info);
-  row.appendChild(img);
-  item.appendChild(row);
-
-
-  container.appendChild(item);
-});
-
+loadPastEvents();
 </script>
 
 </body>
