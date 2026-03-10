@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ライブスケジュール</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.schedule-list{
+  max-width:900px;
+  margin:0 auto;
+}
+
+.schedule-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+
+  background: rgba(255,255,255,0.95);
+  border-radius:10px;
+  padding:8px;
+
+  box-shadow:
+    0 6px 18px rgba(0,0,0,0.08),
+    0 2px 6px rgba(0,0,0,0.05);
+  cursor:pointer;
+}
+
+.year-block{
+  margin-top:6px;
+}
+
+.year-title{
+  font-size:20px;
+  font-weight:bold;
+  margin-bottom:6px;
+}
+
+.month-block{
+  margin-bottom:18px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.month-title{
+  font-size:16px;
+  font-weight:bold;
+  color:#444;
+  margin-bottom:6px;
+}
+
+.schedule-item:hover{
+  background:#fafafa;
+}
+
+.schedule-info{
+  flex:1;
+}
+
+.schedule-date{
+  font-size:14px;
+  color:#666;
+  margin-bottom:2px;
+}
+
+.schedule-title{
+  font-weight:bold;
+}
+
+.schedule-thumb{
+  width:60px;
+  height:60px;
+  object-fit:cover;
+  border-radius:6px;
+}
+
+.today-highlight{
+  border:2px solid #ff4d6d;
+}
+
+.empty{
+  color:#666;
+}
+
+.links{
+  display:flex;
+  gap:16px;
+  margin-bottom:14px;
+}
+
+.schedule-venue{
+  font-size:13px;
+  color:#888;
+}
+
+
+
+</style>
+</head>
+
+<body>
+
+<!-- 背景 -->
+<div class="page-bg"></div>
+
+<div class="schedule-container">
+<div class="schedule-header">
+
+  <a href="index.html" class="back-button">← カレンダーへ戻る</a>
+
+  <h1 class="schedule-page-title">LIVE SCHEDULE</h1>
+
+</div>
+
+<div id="schedule" class="schedule-list"></div>
+
+<script>
+
+let events=[];
+
+try{
+  events = JSON.parse(localStorage.getItem("rawEvents") || "[]");
+}catch(e){
+  events=[];
+}
+
+const container=document.getElementById("schedule");
+
+const today=new Date();
+today.setHours(0,0,0,0);
+
+const futureEvents = events
+.filter(e=>e.date)
+.sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+if(futureEvents.length===0){
+  container.innerHTML='<div class="empty">イベントはありません</div>';
+}
+
+const grouped={};
+
+futureEvents.forEach(event=>{
+
+  const d=new Date(event.date);
+
+  const y=d.getFullYear();
+  const m=d.getMonth()+1;
+
+  if(!grouped[y]) grouped[y]={};
+  if(!grouped[y][m]) grouped[y][m]=[];
+
+  grouped[y][m].push(event);
+
+});
+
+Object.keys(grouped).sort().forEach(year=>{
+
+  const yearBlock=document.createElement("div");
+  yearBlock.className="year-block";
+
+  const yearTitle=document.createElement("div");
+  yearTitle.className="year-title";
+  yearTitle.textContent=year;
+
+  yearBlock.appendChild(yearTitle);
+
+  Object.keys(grouped[year]).sort((a,b)=>a-b).forEach(month=>{
+
+    const monthBlock=document.createElement("div");
+    monthBlock.className="month-block";
+
+    const monthTitle=document.createElement("div");
+    monthTitle.className="month-title";
+    monthTitle.textContent=month+"月";
+
+    monthBlock.appendChild(monthTitle);
+
+    grouped[year][month].forEach(event=>{
+
+      const item=document.createElement("div");
+      item.className="schedule-item";
+
+      const eventDate=new Date(event.date);
+
+      if(eventDate.getTime()===today.getTime()){
+        item.classList.add("today-highlight");
+      }
+
+      item.onclick=()=>{
+        location.href=`event.html?id=${event.id}`;
+      };
+
+      const info=document.createElement("div");
+      info.className="schedule-info";
+
+      const date=document.createElement("div");
+      date.className="schedule-date";
+      date.textContent=event.date;
+
+      const title=document.createElement("div");
+      title.className="schedule-title";
+      title.textContent=event.title;
+
+      const venue=document.createElement("div");
+      venue.className="schedule-venue";
+      venue.textContent=event.venue || "";
+
+      info.appendChild(date);
+      info.appendChild(title);
+      info.appendChild(venue);
+
+      const img=document.createElement("img");
+      img.className="schedule-thumb";
+
+      if(event.images && event.images[0]){
+        img.src=event.images[0];
+      }else{
+        img.style.display="none";
+      }
+
+      img.onerror=()=>{img.style.display="none"};
+
+      item.appendChild(info);
+      item.appendChild(img);
+
+      monthBlock.appendChild(item);
+
+    });
+
+    yearBlock.appendChild(monthBlock);
+
+  });
+
+  container.appendChild(yearBlock);
+
+});
+
+</script>
+
+</body>
+</html>

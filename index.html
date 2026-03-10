@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ライブスケジュール</title>
+  <link rel="stylesheet" href="style.css?v=20260309">
+  <style>
+    .calendar { 
+        display: grid; 
+        grid-template-columns: repeat(7, minmax(0,1fr)); 
+        gap: 4px; 
+    } 
+    .day { 
+        border: 1px solid #ddd; 
+    } 
+    .day-number { 
+        font-weight: bold; 
+        margin-bottom: 2px; 
+    } 
+
+  </style>
+</head>
+<body>
+
+    <!-- 背景 -->
+  <div class="page-bg"></div>
+
+  <!-- 全体ラッパー -->
+  <div class="calendar-wrapper">
+
+    <!-- ヘッダー -->
+    <div class="calendar-header">
+  <img src="images/IMG_3743.png" class="calendar-logo">
+  <span class="calendar-title-bg">
+    <h2 class="calendar-group-name">宇宙∞プラネクシア</h2>
+  </span>
+</div>
+
+    <!-- 月切り替え -->
+    <div id="calendar-header">
+  <button id="prev-month">＜</button>
+
+  <span class="month-bg">
+    <span id="current-month"></span>
+  </span>
+
+  <button id="next-month">＞</button>
+</div>
+
+    <!-- 曜日 -->
+    <div class="calendar-box">
+        <div class="calendar weekdays" id="weekdays"></div>
+        <div class="calendar" id="calendar"></div>
+    </div>
+
+    <div id="today-event" class="today-event-card"></div>
+    <a href="schedule.html" class="schedule-link-card">
+        <div class="schedule-link-sub">
+            ライブ一覧を見る
+        </div>
+    </a>
+
+  </div>
+
+
+<script>
+let currentDate = new Date();
+const calendar = document.getElementById("calendar");
+let events = [];
+try{
+  events = JSON.parse(localStorage.getItem("rawEvents") || "[]");
+}catch(e){
+  events = [];
+}
+
+const weekdaysDiv = document.getElementById("weekdays");
+const weekDays = ["月","火","水","木","金","土","日"];
+
+// 曜日ヘッダー
+weekdaysDiv.innerHTML = "";
+weekDays.forEach((day, index) => {
+  const div = document.createElement("div");
+  div.textContent = day;
+  div.className = "weekday";
+  if (index === 5) div.classList.add("saturday");
+  if (index === 6) div.classList.add("sunday");
+  weekdaysDiv.appendChild(div);
+});
+
+function renderCalendar(direction = "left") {
+
+  if(direction === "left"){
+    calendar.classList.add("calendar-slide-left");
+  }else{
+    calendar.classList.add("calendar-slide-right");
+  }
+
+  setTimeout(() => {
+
+  calendar.innerHTML = "";
+
+  const fragment = document.createDocumentFragment();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  document.getElementById("current-month").textContent =
+    `${year}年${month + 1}月`;
+
+  const lastDay = new Date(year, month + 1, 0).getDate();
+
+  const firstDay = new Date(year, month, 1);
+  let startIndex = firstDay.getDay();
+
+  if(startIndex === 0){
+    startIndex = 6;
+
+}else{
+  startIndex = startIndex - 1;
+}
+
+  // 空白セル
+  for (let i = 0; i < startIndex; i++) {
+    const empty = document.createElement("div");
+    empty.className = "day empty";
+    calendar.appendChild(empty);
+  }
+
+  for (let day = 1; day <= lastDay; day++) {
+    const dayDiv = document.createElement("div");
+    dayDiv.className = "day";
+
+    const dateStr =
+  `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (dateStr === todayStr) {
+    dayDiv.classList.add("today");
+}
+
+    const number = document.createElement("div");
+    number.className = "day-number";
+    number.textContent = day;
+    dayDiv.appendChild(number);
+
+    const dayEvents = events.filter(e => e.date === dateStr);
+    
+    dayEvents.slice(0,2).forEach(event => {
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "calendar-event-image";
+
+  // ▼ 画像がある場合
+  if (event.images && event.images.length > 0) {
+    const img = document.createElement("img");
+    img.src = event.images[0];
+    wrapper.appendChild(img);
+  }
+  // ▼ 画像がない場合
+  else {
+    wrapper.classList.add("no-image");
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "event-title-overlay";
+  overlay.textContent = event.title;
+
+  wrapper.addEventListener("click", () => {
+    location.href = `event.html?id=${event.id}`;
+  });
+
+  wrapper.appendChild(overlay);
+  dayDiv.appendChild(wrapper);
+});
+if(dayEvents.length > 2){
+
+  const badge = document.createElement("div");
+  badge.className = "event-count";
+
+  badge.textContent = `+${dayEvents.length - 2}`;
+
+  const hiddenEvent = dayEvents[2];
+
+  badge.addEventListener("click", () => {
+    location.href = `event.html?id=${hiddenEvent.id}`;
+  });
+
+  dayDiv.appendChild(badge);
+
+}
+fragment.appendChild(dayDiv); 
+} 
+calendar.appendChild(fragment);
+
+calendar.classList.remove("calendar-slide-left");
+calendar.classList.remove("calendar-slide-right");
+
+setTimeout(() => {
+  calendar.style.opacity = "1";
+}, 10);
+
+}, 120);
+}
+
+document.getElementById("prev-month").onclick = () => {
+  currentDate.setMonth(currentDate.getMonth() - 1);
+  renderCalendar();
+};
+
+document.getElementById("next-month").onclick = () => {
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  renderCalendar();
+};
+
+renderCalendar();
+
+let startX = 0;
+
+calendar.addEventListener("touchstart", (e) => {
+  startX = e.touches[0].clientX;
+});
+
+calendar.addEventListener("touchend", (e) => {
+  let endX = e.changedTouches[0].clientX;
+  let diff = endX - startX;
+
+  if (diff > 50) {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  }
+
+  if (diff < -50) {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+  }
+});
+
+function renderTodayEvent(){
+
+  const box = document.getElementById("today-event");
+
+  if(!box) return;
+
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  const todayEvent = events.find(e => e.date === todayStr);
+
+  if(todayEvent){
+
+    box.innerHTML = `
+    <div class="event-highlight-card"
+     onclick="location.href='event.html?id=${todayEvent.id}'">
+
+     <div class="highlight-content">
+
+        <div class="highlight-text">
+            <div class="highlight-label">📢 TODAY LIVE</div>
+      
+            <div class="highlight-title">
+                ${todayEvent.title}
+          </div>
+
+        <div class="highlight-meta">
+            📅 ${todayEvent.date}<br>
+            📍 ${todayEvent.venue}
+      </div>
+    </div>
+
+    ${
+      todayEvent.images && todayEvent.images.length > 0
+      ? `<div class="highlight-thumb">
+           <img src="${todayEvent.images[0]}">
+         </div>`
+      : ""
+    }
+      
+    </div>
+    </div>
+    `;
+
+  }else{
+
+    const future = events
+      .filter(e => e.date > todayStr)
+      .sort((a,b)=>a.date.localeCompare(b.date))[0];
+
+    if(!future){
+      box.innerHTML="";
+      return;
+    }
+
+    box.innerHTML = `
+<div class="event-highlight-card"
+     onclick="location.href='event.html?id=${future.id}'">
+
+  <div class="highlight-content">
+
+    <div class="highlight-text">
+      <div class="highlight-label">NEXT LIVE</div>
+
+      <div class="highlight-title">
+        ${future.title}
+      </div>
+
+      <div class="highlight-meta">
+        📅 ${future.date}<br>
+        📍 ${future.venue}
+      </div>
+    </div>
+
+    ${
+      future.images && future.images.length > 0
+      ? `<div class="highlight-thumb">
+           <img src="${future.images[0]}">
+         </div>`
+      : ""
+    }
+
+  </div>
+
+</div>
+`;
+  }
+}
+
+renderTodayEvent();
+
+</script>
+
+</body>
+</html>
