@@ -78,6 +78,9 @@
   <label>詳細情報</label>
   <textarea id="editInfo" rows="4"></textarea>
 
+  <label>🎫 チケット</label>
+  <input type="text" id="editTicket" style="width:100%">
+
   <label>画像（最大2枚）</label>
   <input type="file" id="editImages" accept="image/*" multiple>
 
@@ -118,6 +121,7 @@
         editStage.value = event.stageTime || "";
         editPhoto.value = event.photoTime || "";
         editInfo.value = event.infoText || "";
+        editTicket.value = event.ticket || "";
     }
 
     // 🔽 ここから追加（画像リサイズ用）
@@ -381,6 +385,7 @@ document.getElementById("updateBtn").addEventListener("click", async () => {
     stageTime: editStage.value,
     photoTime: editPhoto.value,
     infoText: editInfo.value,
+    ticket: editTicket.value,
     images: newImages.slice(0, 2)
   };
 
