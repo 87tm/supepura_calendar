@@ -136,7 +136,7 @@ async function loadEvent(){
   }catch(e){
     events = [];
   }
-  events.sort((a,b)=>a.date.localeCompare(b.date));
+  events.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
   showEvent();
 }
 
