@@ -313,7 +313,7 @@ async function editEvent(id){
 
 const events=await getEvents();
 
-const event=events.find(e=>e.id===id);
+const event=events.find(e=>String(e.id)===String(id));
 
 if(!event)return;
 
@@ -345,9 +345,11 @@ async function deleteEvent(id){
 
 if(!confirm("本当に削除しますか？"))return;
 
-await fetch(API+"/events/"+id,{method:"DELETE"});
+await fetch(API+"/events/"+id,{
+method:"DELETE"
+});
 
-renderEventList();
+await renderEventList();
 
 }
 
