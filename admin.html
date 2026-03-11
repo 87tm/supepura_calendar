@@ -1,46 +1,49 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>イベント管理（運営用）</title>
-  <link rel="stylesheet" href="style.css?v=20260309">
-  <style>
-    .page-white {
-        max-width: 600px;
-        margin: 20px auto;
-        font-family: sans-serif;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>イベント管理（運営用）</title>
+<link rel="stylesheet" href="style.css?v=20260309">
 
-    h1 {
-      font-size: 20px;
-      margin-bottom: 12px;
-    }
+<style>
 
-    textarea {
-      width: 100%;
-      height: 220px;
-      font-size: 14px;
-      padding: 8px;
-      box-sizing: border-box;
-    }
+.page-white{
+max-width:600px;
+margin:20px auto;
+font-family:sans-serif;
+}
 
-    button {
-      margin-top: 12px;
-      padding: 10px;
-      width: 100%;
-      font-size: 16px;
-      cursor: pointer;
-    }
+h1{
+font-size:20px;
+margin-bottom:12px;
+}
 
-    .note {
-      font-size: 12px;
-      color: #666;
-      margin-top: 8px;
-    }
+textarea{
+width:100%;
+height:220px;
+font-size:14px;
+padding:8px;
+box-sizing:border-box;
+}
 
-  </style>
+button{
+margin-top:12px;
+padding:10px;
+width:100%;
+font-size:16px;
+cursor:pointer;
+}
+
+.note{
+font-size:12px;
+color:#666;
+margin-top:8px;
+}
+
+</style>
 </head>
+
 <body class="page-white">
 
 <h1>イベント登録（運営用）</h1>
@@ -48,382 +51,429 @@
 <textarea id="announceText" placeholder="ここに告知文をそのまま貼り付けてください"></textarea>
 
 <input type="file" id="imageInput" accept="image/*" multiple>
-<p class="note">※画像は一度に最大2枚まで選択してください（後から追加はできません）</p>
+<p class="note">※画像は一度に最大2枚まで選択してください</p>
+
 <button id="saveBtn">登録する</button>
 
-<p class="note">
-※ このページは運営専用です。
-</p>
-<div id="editForm" style="display:none; margin-top:16px;">
-  <h2>イベント編集</h2>
+<p class="note">※このページは運営専用です</p>
 
-  <label>タイトル</label>
-  <input type="text" id="editTitle" style="width:100%">
+<div id="editForm" style="display:none;margin-top:16px;">
 
-  <label>日付</label>
-  <input type="date" id="editDate" style="width:100%">
+<h2>イベント編集</h2>
 
-  <label>会場</label>
-  <input type="text" id="editVenue" style="width:100%">
+<label>タイトル</label>
+<input type="text" id="editTitle" style="width:100%">
 
-  <label>OPEN / START</label>
-  <input type="text" id="editOpen" style="width:100%">
+<label>日付</label>
+<input type="date" id="editDate" style="width:100%">
 
-  <label>🎤 ライブ</label>
-  <input type="text" id="editStage" style="width:100%">
+<label>会場</label>
+<input type="text" id="editVenue" style="width:100%">
 
-  <label>📸 特典会</label>
-  <input type="text" id="editPhoto" style="width:100%">
+<label>OPEN / START</label>
+<input type="text" id="editOpen" style="width:100%">
 
-  <label>詳細情報</label>
-  <textarea id="editInfo" rows="4"></textarea>
+<label>🎤 ライブ</label>
+<input type="text" id="editStage" style="width:100%">
 
-  <label>🎫 チケット</label>
-  <input type="text" id="editTicket" style="width:100%">
+<label>📸 特典会</label>
+<input type="text" id="editPhoto" style="width:100%">
 
-  <label>🔗チケットリンク</label>
-  <input type="text" id="editTicketLink" style="width:100%">
+<label>詳細情報</label>
+<textarea id="editInfo" rows="4"></textarea>
 
-  <label>画像（最大2枚）</label>
-  <input type="file" id="editImages" accept="image/*" multiple>
+<label>🎫 チケット</label>
+<input type="text" id="editTicket" style="width:100%">
 
-  <button id="updateBtn">更新する</button>
+<label>🔗チケットリンク</label>
+<input type="text" id="editTicketLink" style="width:100%">
+
+<label>画像（最大2枚）</label>
+<input type="file" id="editImages" accept="image/*" multiple>
+
+<button id="updateBtn">更新する</button>
+
 </div>
 
 <hr>
 
 <h2>登録済みイベント一覧</h2>
+
 <p style="margin-top:16px;">
-  <a href="past.html">▶ 過去イベントはこちら</a>
+<a href="past.html">▶ 過去イベントはこちら</a>
 </p>
+
 <div id="eventList"></div>
 
 <script>
-    let editingId = null;
-    async function getEvents(){
-        try{
-            const res = await fetch("https://event-api.t87.workers.dev/");
-            return await res.json();
-        }catch(e){
-            return [];
-        }
-    }
 
-    async function editEvent(id) {
-        const events = await getEvents();
-        const event = events.find(e => String(e.id) === String(id));
-        if (!event) return;
-        
-        editingId = id;
-        
-        document.getElementById("editForm").style.display = "block";
-        editTitle.value = event.title || "";
-        editDate.value = event.date || "";
-        editVenue.value = event.venue || "";
-        editOpen.value = event.openLine || "";
-        editStage.value = event.stageTime || "";
-        editPhoto.value = event.photoTime || "";
-        editInfo.value = event.infoText || "";
-        editTicket.value = event.ticket || "";
-        editTicketLink.value = event.ticketLink || "";
-    }
+const API="https://event-api.t87.workers.dev";
 
-    function generateId(){
-        return Date.now().toString(36) + Math.random().toString(36).substring(2,8);
-    }
+let editingId=null;
 
-    // 🔽 ここから追加（画像リサイズ用）
-function resizeImage(file, maxSize = 600) {
-  return new Promise(resolve => {
-    const img = new Image();
-    const reader = new FileReader();
+async function getEvents(){
 
-    reader.onload = () => {
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const scale = Math.min(
-          maxSize / img.width,
-          maxSize / img.height,
-          1
-        );
+try{
 
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
+const res=await fetch(API+"/events");
 
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+return await res.json();
 
-        // jpeg + 圧縮率0.7
-        resolve(canvas.toDataURL("image/jpeg", 0.6));
-      };
-      img.src = reader.result;
-    };
+}catch{
 
-    reader.readAsDataURL(file);
-  });
+return [];
+
 }
 
-function loadImages(files) {
-  return Promise.all(
-    Array.from(files).slice(0, 2).map(file => resizeImage(file))
-  );
 }
-// 🔼 ここまで追加
 
-  function parseAnnounce(text) {
-    const result = {
-      title: null,
-      date: null,
-      venue: null,
-      openLine: null,
-      stageTime: null,
-      photoTime: null,
-      infoText: null,
-      rawText: text,
-      ticket: null,
-      ticketLink: null,
+function generateId(){
 
-    };
+return Date.now().toString(36)+Math.random().toString(36).substring(2,8);
 
-    const lines = text.split("\n");
+}
 
-    // ① タイトル
-    const titleMatch = text.match(/『(.+?)』/);
-    if (titleMatch) {
-      result.title = titleMatch[1];
-    } else {
-      result.title = lines[0].trim();
-    }
+function resizeImage(file,maxSize=600){
 
-    // ② 日付
-    const dateMatch = text.match(/(\d{1,2})月(\d{1,2})日/);
-    if (dateMatch) {
+return new Promise(resolve=>{
 
-        const now = new Date();
+const img=new Image();
 
-        const month = dateMatch[1].padStart(2, "0");
-        const day = dateMatch[2].padStart(2, "0");
+const reader=new FileReader();
 
-        let year = now.getFullYear();
+reader.onload=()=>{
 
-        if (parseInt(month) < now.getMonth() + 1) {
-            year += 1;
-        }
+img.onload=()=>{
 
-        result.date = `${year}-${month}-${day}`;
-    }
+const canvas=document.createElement("canvas");
 
-    // ③ 会場
-    const venueMatch = text.match(/📍\s*([^\n]+)/);
-    if (venueMatch) {
-      result.venue = venueMatch[1].trim();
-    }
+const scale=Math.min(maxSize/img.width,maxSize/img.height,1);
 
-    // ④ OPEN / START 行をそのまま保存
-    const openLineIndex = lines.findIndex(line =>
-  (line.includes("OPEN") || line.includes("開場")) &&
-  (line.includes("START") || line.includes("開演"))
+canvas.width=img.width*scale;
+
+canvas.height=img.height*scale;
+
+const ctx=canvas.getContext("2d");
+
+ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+resolve(canvas.toDataURL("image/jpeg",0.6));
+
+};
+
+img.src=reader.result;
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+}
+
+function loadImages(files){
+
+return Promise.all(
+
+Array.from(files).slice(0,2).map(file=>resizeImage(file))
+
 );
-    if (openLineIndex !== -1) {
-      result.openLine = lines[openLineIndex].trim();
-    }
 
-    // ⑤ 🎤 時間を分解
-    const stageMatch = text.match(/🎤\s*([^\n]+)/);
-    if (stageMatch) {
-      result.stageTime = stageMatch[1].trim();
-    }
-
-    // ⑥ 📸 時間を分解
-    const photoMatch = text.match(/📸\s*([^\n]+)/);
-    if (photoMatch) {
-      result.photoTime = photoMatch[1].trim();
-    }
-
-    // ⑦ OPEN行の次〜空行までを infoText に保存
-    if (openLineIndex !== -1) {
-      const infoLines = [];
-      for (let i = openLineIndex + 1; i < lines.length; i++) {
-        if (lines[i].trim() === "") break;
-        if (!lines[i].startsWith("🎤") && !lines[i].startsWith("📸")) {
-          infoLines.push(lines[i]);
-        }
-      }
-      result.infoText = infoLines.join("\n");
-    }
-
-    const ticketMatch = text.match(/🎫\s*([^\n]+)/);
-    if (ticketMatch) {
-        result.ticket = ticketMatch[1].trim();
-    }
-
-    const linkMatch = text.match(/🔗\s*([^\n]+)/);
-    if (linkMatch) {
-        result.ticketLink = linkMatch[1].trim();
-    }
-
-    return result;
-  }
-  
-  document.getElementById("saveBtn").addEventListener("click", async () => {
-  const text = document.getElementById("announceText").value.trim();
-  const files = document.getElementById("imageInput").files;
-  if (files.length > 2) {
-  alert("画像は最大2枚までです。一度に選択してください。");
-  return;
-}
-  if (!text) {
-    alert("告知文を入力してください");
-    return;
-  }
-
-  const images = files.length ? await loadImages(files) : [];
-
-  const saved = await getEvents();
-  const parsed = parseAnnounce(text);
-
-  if (editingId) {
-    const index = saved.findIndex(e => e.id === editingId);
-    saved[index] = {
-        ...saved[index],
-        ...parsed,
-        images: images.length ? images : saved[index].images
-    };
-    editingId = null;
-} else {
-  saved.push({
-    id: generateId(),
-    images,
-    ...parsed
-  });
 }
 
-  await fetch("https://event-api.t87.workers.dev/", {
+function parseAnnounce(text){
 
-  method: "POST",
+const result={
 
-  headers: {
-    "Content-Type": "application/json"
-  },
+title:null,
 
-  body: JSON.stringify(saved)
+date:null,
+
+venue:null,
+
+openLine:null,
+
+stageTime:null,
+
+photoTime:null,
+
+infoText:null,
+
+rawText:text,
+
+ticket:null,
+
+ticketLink:null
+
+};
+
+const lines=text.split("\n");
+
+const titleMatch=text.match(/『(.+?)』/);
+
+result.title=titleMatch?titleMatch[1]:lines[0].trim();
+
+const dateMatch=text.match(/(\d{1,2})月(\d{1,2})日/);
+
+if(dateMatch){
+
+const now=new Date();
+
+let year=now.getFullYear();
+
+const month=dateMatch[1].padStart(2,"0");
+
+const day=dateMatch[2].padStart(2,"0");
+
+if(parseInt(month)<now.getMonth()+1)year++;
+
+result.date=`${year}-${month}-${day}`;
+
+}
+
+const venueMatch=text.match(/📍\s*([^\n]+)/);
+
+if(venueMatch)result.venue=venueMatch[1].trim();
+
+const openLineIndex=lines.findIndex(line=>
+
+(line.includes("OPEN")||line.includes("開場"))&&
+
+(line.includes("START")||line.includes("開演"))
+
+);
+
+if(openLineIndex!==-1)result.openLine=lines[openLineIndex].trim();
+
+const stageMatch=text.match(/🎤\s*([^\n]+)/);
+
+if(stageMatch)result.stageTime=stageMatch[1].trim();
+
+const photoMatch=text.match(/📸\s*([^\n]+)/);
+
+if(photoMatch)result.photoTime=photoMatch[1].trim();
+
+const ticketMatch=text.match(/🎫\s*([^\n]+)/);
+
+if(ticketMatch)result.ticket=ticketMatch[1].trim();
+
+const linkMatch=text.match(/🔗\s*([^\n]+)/);
+
+if(linkMatch)result.ticketLink=linkMatch[1].trim();
+
+return result;
+
+}
+
+document.getElementById("saveBtn").addEventListener("click",async()=>{
+
+const text=announceText.value.trim();
+
+const files=imageInput.files;
+
+if(!text)return alert("告知文を入力してください");
+
+if(files.length>2)return alert("画像は最大2枚まで");
+
+const images=files.length?await loadImages(files):[];
+
+const parsed=parseAnnounce(text);
+
+const event={
+
+id:generateId(),
+
+images,
+
+...parsed
+
+};
+
+await fetch(API+"/events",{
+
+method:"POST",
+
+headers:{"Content-Type":"application/json"},
+
+body:JSON.stringify(event)
 
 });
 
-  document.getElementById("announceText").value = "";
-  document.getElementById("imageInput").value = "";
-  alert("保存しました（画像含む）");
-  renderEventList();
+announceText.value="";
+
+imageInput.value="";
+
+alert("保存しました");
+
+renderEventList();
+
 });
 
-async function renderEventList() {
-  const list = document.getElementById("eventList");
-  const events = await getEvents();
+async function editEvent(id){
 
-  // ✅ ① まず today を定義
-  const today = new Date().toISOString().slice(0, 10);
+const events=await getEvents();
 
-  list.innerHTML = "";
+const event=events.find(e=>e.id===id);
 
-  if (events.length === 0) {
-    list.textContent = "登録済みイベントはありません";
-    return;
-  }
+if(!event)return;
 
-  // ✅ ② 日付順に並び替え
-  events.sort((a, b) =>
-   (a.date || "").localeCompare(b.date || "")
- );
+editingId=id;
 
-  // ✅ ③ 未来・過去で分離
-  const upcoming = events.filter(e => e.date >= today);
-  const past = events.filter(e => e.date < today).reverse();
+editForm.style.display="block";
 
-  // ===== 今後のイベント =====
-  upcoming.forEach(event => {
-    const div = document.createElement("div");
-    div.className = "event-item";
-    
-    const thumb = event.images && event.images[0]
-    ? `<img src="${event.images[0]}" class="event-thumb">`
-    : "";
-    
-    div.innerHTML = `
-    <div class="event-row">
-        <div>
-            <h3>${event.title}</h3>
-            <div>📅 ${event.date || "-"}</div>
-            <div>📍 ${event.venue || "-"}</div>
-        </div>
-        ${thumb}
-    </div>
-    
-    <div class="event-actions">
-        <button onclick="editEvent('${event.id}')">編集</button>
-        <button onclick="deleteEvent('${event.id}')">削除</button>
-    </div>
-    `;
+editTitle.value=event.title||"";
 
-    list.appendChild(div);
-  });
+editDate.value=event.date||"";
+
+editVenue.value=event.venue||"";
+
+editOpen.value=event.openLine||"";
+
+editStage.value=event.stageTime||"";
+
+editPhoto.value=event.photoTime||"";
+
+editInfo.value=event.infoText||"";
+
+editTicket.value=event.ticket||"";
+
+editTicketLink.value=event.ticketLink||"";
+
 }
 
-async function deleteEvent(id) {
-  const ok = confirm("本当にこのイベントを削除しますか？");
-  if (!ok) return;
+async function deleteEvent(id){
 
-  let events = await fetch("https://event-api.t87.workers.dev/")
-  .then(r => r.json());
+if(!confirm("本当に削除しますか？"))return;
 
-  events = events.filter(e => String(e.id) !== String(id));
+await fetch(API+"/events/"+id,{method:"DELETE"});
 
-  await fetch("https://event-api.t87.workers.dev/",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify(events)
-  });
+renderEventList();
 
-  renderEventList().catch(console.error);
 }
 
-renderEventList().catch(console.error);
+document.getElementById("updateBtn").addEventListener("click",async()=>{
 
-document.getElementById("updateBtn").addEventListener("click", async () => {
-  const events = await fetch("https://event-api.t87.workers.dev/")
-  .then(r => r.json());
-  const index = events.findIndex(e => e.id === editingId);
-  if (index === -1) return;
+const events=await getEvents();
 
-  const files = document.getElementById("editImages").files;
-  const newImages = files.length ? await loadImages(files) : events[index].images;
+const index=events.findIndex(e=>e.id===editingId);
 
-  events[index] = {
-    ...events[index],
-    title: editTitle.value,
-    date: editDate.value,
-    venue: editVenue.value,
-    openLine: editOpen.value,
-    stageTime: editStage.value,
-    photoTime: editPhoto.value,
-    infoText: editInfo.value,
-    ticket: editTicket.value,
-    ticketLink: editTicketLink.value,
-    images: newImages.slice(0, 2)
-  };
+if(index===-1)return;
 
-  await fetch("https://event-api.t87.workers.dev/",{
- method:"POST",
- headers:{ "Content-Type":"application/json"},
- body:JSON.stringify(events)
+const files=editImages.files;
+
+const newImages=files.length?await loadImages(files):events[index].images;
+
+events[index]={
+
+...events[index],
+
+title:editTitle.value,
+
+date:editDate.value,
+
+venue:editVenue.value,
+
+openLine:editOpen.value,
+
+stageTime:editStage.value,
+
+photoTime:editPhoto.value,
+
+infoText:editInfo.value,
+
+ticket:editTicket.value,
+
+ticketLink:editTicketLink.value,
+
+images:newImages.slice(0,2)
+
+};
+
+await fetch(API+"/events/"+editingId,{
+
+method:"PUT",
+
+headers:{"Content-Type":"application/json"},
+
+body:JSON.stringify(events[index])
+
 });
-  editingId = null;
 
-  document.getElementById("editImages").value = "";
-  document.getElementById("editForm").style.display = "none";
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  renderEventList().catch(console.error);
-  alert("更新しました");
+editingId=null;
+
+editImages.value="";
+
+editForm.style.display="none";
+
+renderEventList();
+
+alert("更新しました");
+
 });
+
+async function renderEventList(){
+
+const list=document.getElementById("eventList");
+
+const events=await getEvents();
+
+list.innerHTML="";
+
+if(!events.length){
+
+list.textContent="登録済みイベントはありません";
+
+return;
+
+}
+
+const today=new Date().toISOString().slice(0,10);
+
+events.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+
+const upcoming=events.filter(e=>e.date>=today);
+
+upcoming.forEach(event=>{
+
+const div=document.createElement("div");
+
+const thumb=event.images?.[0]?`<img src="${event.images[0]}" class="event-thumb">`:"";
+
+div.innerHTML=`
+
+<div class="event-row">
+
+<div>
+
+<h3>${event.title}</h3>
+
+<div>📅 ${event.date||"-"}</div>
+
+<div>📍 ${event.venue||"-"}</div>
+
+</div>
+
+${thumb}
+
+</div>
+
+<div class="event-actions">
+
+<button onclick="editEvent('${event.id}')">編集</button>
+
+<button onclick="deleteEvent('${event.id}')">削除</button>
+
+</div>
+
+`;
+
+list.appendChild(div);
+
+});
+
+}
+
+renderEventList();
 
 </script>
 
