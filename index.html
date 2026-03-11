@@ -76,6 +76,8 @@ async function loadEvents(){
   }catch(e){
     events = [];
   }
+  renderCalendar();
+  renderTodayEvent();
 }
 
 loadEvents();
@@ -139,7 +141,10 @@ function renderCalendar(direction = "left") {
     const dateStr =
   `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const today = new Date();
+const todayStr = today.getFullYear() + "-" +
+  String(today.getMonth()+1).padStart(2,"0") + "-" +
+  String(today.getDate()).padStart(2,"0");
   if (dateStr === todayStr) {
     dayDiv.classList.add("today");
 }
@@ -218,8 +223,6 @@ document.getElementById("next-month").onclick = () => {
   renderCalendar();
 };
 
-renderCalendar();
-
 let startX = 0;
 
 calendar.addEventListener("touchstart", (e) => {
@@ -247,7 +250,11 @@ function renderTodayEvent(){
 
   if(!box) return;
 
-  const todayStr = new Date().toISOString().slice(0,10);
+  const today = new Date();
+  const todayStr =
+  today.getFullYear() + "-" +
+  String(today.getMonth()+1).padStart(2,"0") + "-" +
+  String(today.getDate()).padStart(2,"0");
 
   const todayEvent = events.find(e => e.date === todayStr);
 
@@ -328,8 +335,6 @@ function renderTodayEvent(){
 `;
   }
 }
-
-renderTodayEvent();
 
 </script>
 
