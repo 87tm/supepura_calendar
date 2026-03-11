@@ -131,7 +131,7 @@
 async function loadEvent(){
 
   try{
-    events = await fetch("https://event-api.t87.workers.dev/")
+    events = await fetch("https://event-api.t87.workers.dev/events")
       .then(r => r.json());
   }catch(e){
     events = [];
@@ -146,7 +146,7 @@ function extractTicketInfo(text){
 
   const result = {};
 
-  const saleMatch = text.match(/販売開始[:：]?\s*([^\n]+)/);
+  const saleMatch = text.match(/🎫[:：]?\s*([^\n]+)/);
   if(saleMatch){
     result.sale = saleMatch[1];
   }
@@ -170,7 +170,10 @@ function showEvent(){
     return;
   }
 
-  const ticket = extractTicketInfo(event.rawText);
+  const ticket = {
+    sale: event.ticket,
+    link: event.ticketLink
+    };
 
   // 画像
   if (event.images && event.images.length > 0) {
@@ -230,7 +233,7 @@ function showEvent(){
     ${event.infoText ? `
       <div class="section">
         <div class="label">詳細情報</div>
-        <div class="box">${event.infoText}</div>
+        <div class="box">${event.infoText.replace(/\n/g,"<br>")}</div>
       </div>
     ` : ""}
 
@@ -238,7 +241,7 @@ function showEvent(){
       <div class="section">
         <div class="label">🎫 チケット</div>
         <div class="box">
-          ${ticket.sale ? `<div class="ticket-sale">販売開始：${ticket.sale}</div>` : ""}
+          ${ticket.sale ? `<div class="ticket-sale">🎫：${ticket.sale}</div>` : ""}
           ${ticket.link ? `<a href="${ticket.link}" target="_blank">${ticket.link}</a>` : ""}
         </div>
       </div>
