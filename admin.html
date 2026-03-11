@@ -107,7 +107,7 @@ margin-top:8px;
 
 <script>
 
-const API="https://event-api.t87.workers.dev";
+const API="https://event-api.t87.workers.dev/events";
 
 let editingId=null;
 
@@ -319,7 +319,7 @@ if(!event)return;
 
 editingId=id;
 
-editForm.style.display="block";
+document.getElementById("editForm").style.display="block";
 
 editTitle.value=event.title||"";
 
@@ -348,7 +348,6 @@ if(!confirm("本当に削除しますか？"))return;
 await fetch(API+"/events/"+id,{
 method:"DELETE"
 });
-
 await renderEventList();
 
 }
