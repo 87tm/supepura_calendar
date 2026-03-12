@@ -136,7 +136,6 @@ async function loadEvent(){
   }catch(e){
     events = [];
   }
-  events.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
   showEvent();
 }
 
@@ -181,7 +180,7 @@ function showEvent(){
     const dots = document.getElementById("imageDots");
 
     slider.innerHTML = event.images
-      .map(src => `<img src="${src}">`)
+      .map(src => `<img loading="lazy" src="${src}">`)
       .join("");
 
     dots.innerHTML = event.images
