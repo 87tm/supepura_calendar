@@ -11,7 +11,7 @@
   <meta property="og:description" content="ライブイベント情報をカレンダーで確認できます。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://87tm.github.io/supepura_calendar/">
-  <meta property="og:image" content="https://87tm.github.io/supepura_calendar/">
+  <meta property="og:image" content="https://87tm.github.io/supepura_calendar/images/IMG_8572.png">
 
   <meta name="twitter:card" content="summary">
 
@@ -177,6 +177,19 @@ const todayStr = today.getFullYear() + "-" +
     dayDiv.appendChild(number);
 
     const dayEvents = eventsByDate[dateStr] || [];
+    
+    // 🎤ライブ時間で並び替え（早い順）
+    dayEvents.sort((a,b)=>{
+        if(!a.stageTime || !b.stageTime) return 0;
+
+        const getTime = (str)=>{
+            const m = str.match(/(\d{1,2}):(\d{2})/);
+            if(!m) return 9999;
+            return parseInt(m[1])*60 + parseInt(m[2]);
+        };
+
+        return getTime(a.stageTime) - getTime(b.stageTime);
+    });
     
     dayEvents.slice(0,2).forEach(event => {
 
