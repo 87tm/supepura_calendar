@@ -85,7 +85,9 @@ const calendar = document.getElementById("calendar");
 
 async function loadEvents(){
   try{
-    events = await fetch("https://event-api.t87.workers.dev/events")
+    events = await fetch("https://event-api.t87.workers.dev/events",{
+      cache:"force-cache"
+    })
       .then(r => r.json());
     eventsByDate = {};
     events.forEach(e=>{
@@ -102,6 +104,7 @@ async function loadEvents(){
 let events = [];
 let eventsByDate = {};
 
+renderCalendar();
 loadEvents();
 
 const weekdaysDiv = document.getElementById("weekdays");
