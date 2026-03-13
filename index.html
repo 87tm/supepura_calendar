@@ -89,6 +89,7 @@ async function loadEvents(){
       cache:"force-cache"
     })
       .then(r => r.json());
+      localStorage.setItem("eventsCache", JSON.stringify(events));
     eventsByDate = {};
     events.forEach(e=>{
         if(!eventsByDate[e.date]) eventsByDate[e.date]=[];
