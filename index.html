@@ -260,30 +260,56 @@ document.getElementById("next-month").onclick = () => {
 };
 
 let startX = 0;
+let startY = 0;
+let isPinching = false;
 
 calendar.addEventListener("touchstart", (e) => {
+
+  if (e.touches.length > 1) {
+    isPinching = true;
+    return;
+  }
+
   startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+
 });
 
 calendar.addEventListener("touchend", (e) => {
 
-  // ✅ ピンチ拡大中は月移動させない
+  // ✅ ピンチ後の誤作動防止
+  if (isPinching) {
+    isPinching = false;
+    return;
+  }
+
+  // ✅ 拡大状態は無効
   if (window.visualViewport && window.visualViewport.scale > 1) {
     return;
   }
 
   let endX = e.changedTouches[0].clientX;
-  let diff = endX - startX;
+  let endY = e.changedTouches[0].clientY;
 
-  if (diff > 50) {
+  let diffX = endX - startX;
+  let diffY = endY - startY;
+
+  // ✅ 縦移動が大きい場合は無効
+  if (Math.abs(diffY) > Math.abs(diffX)) {
+    return;
+  }
+
+  // ✅ 横移動がしっかりある時だけ月移動
+  if (diffX > 60) {
     currentDate.setMonth(currentDate.getMonth() - 1);
     renderCalendar();
   }
 
-  if (diff < -50) {
+  if (diffX < -60) {
     currentDate.setMonth(currentDate.getMonth() + 1);
     renderCalendar();
   }
+
 });
 
 function renderTodayEvent(){
