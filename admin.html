@@ -292,17 +292,25 @@ const openLineIndex=lines.findIndex(line=>
 if(openLineIndex!==-1)result.openLine=lines[openLineIndex].trim();
 
 let infoLines=[];
-for(let i=openLineIndex+1;i<lines.length;i++){
 
-const line=lines[i].trim();
+// 📝 行の位置を探す
+const memoIndex = lines.findIndex(line => line.includes("📝"));
 
-if(line==="") break;
+if(memoIndex !== -1){
 
-infoLines.push(line);
+  for(let i=memoIndex+1;i<lines.length;i++){
+
+    const line = lines[i];
+
+    if(line.trim() === "") break;
+
+    infoLines.push(line);
+
+  }
 
 }
 
-result.infoText=infoLines.join("\n");
+result.infoText = infoLines.join("\n");
 
 const stageMatch=text.match(/🎤\s*([^\n]+)/);
 
@@ -399,6 +407,8 @@ editTicket.value=event.ticket||"";
 
 editTicketLink.value=event.ticketLink||"";
 
+window.scrollTo({ top: 0, behavior: "smooth" });
+
 }
 
 async function deleteEvent(id){
@@ -469,7 +479,7 @@ editImages.value="";
 
 editForm.style.display="none";
 
-renderEventList();
+await renderEventList();
 
 alert("更新しました");
 
