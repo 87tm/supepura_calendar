@@ -84,34 +84,92 @@ let currentDate = new Date();
 const calendar = document.getElementById("calendar");
 
 async function loadEvents(){
-  try{
-    events = await fetch("https://event-api.t87.workers.dev/events",{
-      cache:"force-cache"
-    })
-      .then(r => r.json());
-      localStorage.setItem("eventsCache", JSON.stringify(events));
-    eventsByDate = {};
-    events.forEach(e=>{
 
-    // ✅ 日付が正しい形式じゃない場合はスキップ
-    if(!e.date || !/^\d{4}-\d{2}-\d{2}$/.test(e.date)){
-        return;
+  // ✅ ① まずキャッシュを即表示（爆速）
+  let cache = null;
+  try{
+    cache = localStorage.getItem("eventsCache");
+  }catch(e){
+    console.warn("キャッシュ取得失敗");
+  }
+  if(cache){
+    try{
+      const parsed = JSON.parse(cache);
+
+      // ✅ 画像データが存在するかチェック
+      const hasImageData = parsed.some(e =>
+      Array.isArray(e.images) && e.images.length > 0
+    );
+
+    // ❌ 画像が1つもないキャッシュは使わない
+    if(!hasImageData){
+      throw new Error("old cache");
     }
 
-    if(!eventsByDate[e.date]) eventsByDate[e.date]=[];
-    eventsByDate[e.date].push(e);
-  });
-  }catch(e){
-    events = [];
+    events = parsed;
+
+      eventsByDate = {};
+      events.forEach(e=>{
+        if(!e.date || !/^\d{4}-\d{2}-\d{2}$/.test(e.date)) return;
+
+        if(!eventsByDate[e.date]) eventsByDate[e.date]=[];
+        eventsByDate[e.date].push(e);
+      });
+
+      renderCalendar();
+      renderTodayEvent();
+
+    }catch(e){
+      console.warn("キャッシュ壊れてるので削除");
+
+      // ✅ 壊れたキャッシュ削除
+      try{
+        localStorage.removeItem("eventsCache");
+      }catch(e){}
+
+      events = [];
+    }
   }
-  renderCalendar();
-  renderTodayEvent();
+
+  // ✅ ② その後に最新データ取得（裏で更新）
+  try{
+    const fresh = await fetch("https://event-api.t87.workers.dev/events")
+      .then(r => r.json());
+
+    events = fresh;
+    try{
+      const data = JSON.stringify(events);
+
+      // ✅ 容量制限（約4MB）超えたら保存しない
+      if(data.length < 4000000){
+        localStorage.setItem("eventsCache", data);
+      }else{
+        console.warn("キャッシュ大きすぎて保存スキップ");
+      }
+
+    }catch(e){
+      console.warn("キャッシュ保存失敗");
+    }
+
+    eventsByDate = {};
+    events.forEach(e=>{
+      if(!e.date || !/^\d{4}-\d{2}-\d{2}$/.test(e.date)) return;
+
+      if(!eventsByDate[e.date]) eventsByDate[e.date]=[];
+      eventsByDate[e.date].push(e);
+    });
+
+    renderCalendar();
+    renderTodayEvent();
+
+  }catch(e){
+    // 通信失敗でもキャッシュで表示済みだからOK
+  }
 }
 
 let events = [];
 let eventsByDate = {};
 
-renderCalendar();
 loadEvents();
 
 const weekdaysDiv = document.getElementById("weekdays");
@@ -206,17 +264,29 @@ const todayStr = today.getFullYear() + "-" +
   const wrapper = document.createElement("div");
   wrapper.className = "calendar-event-image";
 
+  if(!event) return;
   // ▼ 画像がある場合
-  if (event.images && event.images.length > 0) {
-    const img = document.createElement("img");
-    img.loading="lazy";
-    img.src = event.images[0];
-    wrapper.appendChild(img);
-  }
-  // ▼ 画像がない場合
-  else {
+  if (
+  Array.isArray(event.images) &&
+  event.images.length > 0 &&
+  typeof event.images[0] === "string" &&
+  event.images[0].trim() !== ""
+) {
+  const img = document.createElement("img");
+  img.loading = "lazy";
+
+  // ✅ 画像エラーでも絶対に壊れないようにする
+  img.onerror = () => {
     wrapper.classList.add("no-image");
-  }
+    img.remove();
+  };
+
+  img.src = event.images[0];
+  wrapper.appendChild(img);
+}
+else {
+  wrapper.classList.add("no-image");
+}
 
   const overlay = document.createElement("div");
   overlay.className = "event-title-overlay";
