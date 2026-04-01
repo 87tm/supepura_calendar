@@ -203,7 +203,43 @@ const ctx=canvas.getContext("2d");
 
 ctx.drawImage(img,0,0,canvas.width,canvas.height);
 
-resolve(canvas.toDataURL("image/jpeg",0.8));
+canvas.toBlob(async blob => {
+
+  try{
+
+    const formData = new FormData();
+
+    // ImgBBは "image" という名前で送る必要がある
+    formData.append("image", blob);
+
+    const res = await fetch(
+      "https://api.imgbb.com/1/upload?key=4b8367047ca70fe565b2822ad4db3bd1",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    const data = await res.json();
+
+    // エラー内容をconsoleで確認できるようにする
+    if(!res.ok || !data.success){
+      console.error("画像アップロード失敗", data);
+      alert("画像アップロードに失敗しました。APIキーや画像サイズを確認してください。");
+      return;
+    }
+
+    resolve(data.data.url);
+
+  }catch(err){
+
+    console.error(err);
+    alert("画像アップロード中にエラーが発生しました。");
+    resolve("");
+
+  }
+
+}, "image/jpeg", 0.8);
 
 };
 
