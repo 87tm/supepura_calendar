@@ -92,12 +92,77 @@ top:12px;
 
 <body class="page-white">
 
+<div id="passwordLock" style="
+position:fixed;
+inset:0;
+background:#fff;
+z-index:99999;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:20px;
+box-sizing:border-box;
+">
+
+<div style="
+width:100%;
+max-width:360px;
+text-align:center;
+">
+
+<h2>運営用ページ</h2>
+
+<p style="font-size:14px;color:#666;">
+パスワードを入力してください
+</p>
+
+<input
+type="password"
+id="adminPassword"
+placeholder="パスワード"
+style="
+width:100%;
+padding:12px;
+box-sizing:border-box;
+font-size:16px;
+margin-bottom:10px;
+">
+
+<button
+id="passwordButton"
+style="
+width:100%;
+padding:12px;
+font-size:16px;
+">
+
+ログイン
+
+</button>
+
+<p
+id="passwordError"
+style="
+display:none;
+color:#d66;
+font-size:13px;
+margin-top:10px;
+">
+
+パスワードが違います
+
+</p>
+
+</div>
+
+</div>
+
 <h1>イベント登録（運営用）</h1>
 
 <textarea id="announceText" placeholder="ここに告知文をそのまま貼り付けてください"></textarea>
 
 <input type="file" id="imageInput" accept="image/*" multiple>
-<p class="note">※画像は一度に最大2枚まで選択してください</p>
+<p class="note">※画像は一度に最大3枚まで選択してください</p>
 
 <button id="saveBtn">登録する</button>
 
@@ -152,6 +217,33 @@ top:12px;
 <div id="eventList"></div>
 
 <script>
+const ADMIN_PASSWORD="supecale2026";
+
+const passwordLock=document.getElementById("passwordLock");
+const passwordInput=document.getElementById("adminPassword");
+const passwordButton=document.getElementById("passwordButton");
+const passwordError=document.getElementById("passwordError");
+
+passwordButton.addEventListener("click",()=>{
+  
+  if(passwordInput.value===ADMIN_PASSWORD){
+    
+    passwordLock.style.display="none";
+    
+    sessionStorage.setItem("adminUnlocked","true");
+    
+  }else{
+    
+    passwordError.style.display="block";
+    
+  }
+  
+});
+
+if(sessionStorage.getItem("adminUnlocked")==="true"){
+  passwordLock.style.display="none";
+}
+
 const API="https://event-api.t87.workers.dev";
 
 let editingId=null;
@@ -257,7 +349,7 @@ function loadImages(files){
 
 return Promise.all(
 
-Array.from(files).slice(0,2).map(file=>resizeImage(file))
+Array.from(files).slice(0,3).map(file=>resizeImage(file))
 
 );
 
@@ -295,7 +387,7 @@ const titleMatch=text.match(/『(.+?)』/);
 
 result.title=titleMatch?titleMatch[1]:lines[0].trim();
 
-const dateMatch=text.match(/(\d{1,2})月(\d{1,2})日/);
+const dateMatch=text.match(/(\d{1,2})(?:月|\/)(\d{1,2})(?:日)?/);
 
 if(dateMatch){
 
@@ -376,7 +468,7 @@ const files=imageInput.files;
 
 if(!text)return alert("告知文を入力してください");
 
-if(files.length>2)return alert("画像は最大2枚まで");
+if(files.length>2)return alert("画像は最大3枚まで");
 
 const images=files.length?await loadImages(files):[];
 
@@ -496,7 +588,7 @@ ticket:editTicket.value,
 
 ticketLink:editTicketLink.value,
 
-images:newImages.slice(0,2)
+images:newImages.slice(0,3)
 
 };
 
