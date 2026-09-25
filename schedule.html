@@ -250,7 +250,42 @@ Object.keys(grouped).sort().forEach(year=>{
   container.appendChild(yearBlock);
 
 });
+  
+// ページを開いたとき、今日周辺のイベントまで自動スクロール
+setTimeout(() => {
+
+  const items = Array.from(
+    container.querySelectorAll(".schedule-item")
+  );
+
+  if(!items.length) return;
+
+  const todayTime = today.getTime();
+
+  // 今日以降で最も近いイベントを探す
+  let targetItem = items.find(item => {
+
+    const dateText = item.querySelector(".schedule-date")?.textContent;
+    if(!dateText) return false;
+
+    const eventTime = new Date(dateText).getTime();
+
+    return eventTime >= todayTime;
+
+  });
+
+  // 今日以降のイベントがなければ何もしない
+  if(!targetItem) return;
+
+  targetItem.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+
+}, 100);
+
 }
+
 
 </script>
 
