@@ -11,7 +11,7 @@
   <meta property="og:description" content="宇宙∞プラネクシア（すぺぷら）のライブイベント情報をカレンダーで確認できます。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://87tm.github.io/supepura_calendar/">
-  <meta property="og:image" content="https://87tm.github.io/supepura_calendar/images/IMG_8572.png">
+  <meta property="og:image" content="https://87tm.github.io/supepura_calendar/images/IMG_5834.jpg">
 
   <meta name="twitter:card" content="summary">
 
@@ -70,6 +70,7 @@
     </div>
 
     <div id="today-event" class="today-event-card"></div>
+    <div id="ticket-start-list" class="today-event-card"></div>
     <a href="schedule.html" class="schedule-link-card">
         <div class="schedule-link-sub">
             ライブ一覧を見る
@@ -118,6 +119,7 @@ async function loadEvents(){
 
       renderCalendar();
       renderTodayEvent();
+      renderTicketCards();
 
     }catch(e){
       console.warn("キャッシュ壊れてるので削除");
@@ -161,6 +163,7 @@ async function loadEvents(){
 
     renderCalendar();
     renderTodayEvent();
+    renderTicketCards();
 
   }catch(e){
     // 通信失敗でもキャッシュで表示済みだからOK
@@ -392,6 +395,47 @@ calendar.addEventListener("touchend", (e) => {
 
 });
 
+function extractTicketDate(text, eventDate){
+
+  if(!text || !eventDate) return null;
+
+  // event.ticketには「🎫」が保存されていないため、
+  // 「🎫」がある場合とない場合の両方に対応
+  const ticketText = text.includes("🎫")
+    ? text.split("🎫")[1]
+    : text;
+
+  // 例:
+  // 5/1(金)22:00より販売開始
+  // 5/1 22:00〜
+  // 5/1(金)22:00発売
+  const match = ticketText.match(
+    /(\d{1,2})\/(\d{1,2})\s*(?:\([^)]*\))?\s*(\d{1,2}):(\d{2})/
+  );
+
+  if(!match) return null;
+
+  // イベント本体の日付から年を取得
+  const eventDateObj = new Date(eventDate + "T00:00:00");
+
+  let year = eventDateObj.getFullYear();
+
+  const month = parseInt(match[1]);
+  const day = parseInt(match[2]);
+  const hour = parseInt(match[3]);
+  const minute = parseInt(match[4]);
+
+  let date = new Date(year, month - 1, day, hour, minute);
+
+  // イベント日よりチケット発売日が後になる場合は、
+  // 前年のチケット発売として扱う
+  if(date > eventDateObj){
+    date.setFullYear(year - 1);
+  }
+
+  return date;
+}
+
 function renderTodayEvent(){
 
   const box = document.getElementById("today-event");
@@ -415,7 +459,7 @@ function renderTodayEvent(){
      <div class="highlight-content">
 
         <div class="highlight-text">
-            <div class="highlight-label">📢 TODAY LIVE</div>
+            <div class="highlight-label">📢 TODAY'S LIVE</div>
       
             <div class="highlight-title">
                 ${todayEvent.title}
@@ -482,6 +526,215 @@ function renderTodayEvent(){
 </div>
 `;
   }
+}
+
+function renderTicketCards(){
+
+  const box = document.getElementById("ticket-start-list");
+
+  if(!box) return;
+
+  const now = new Date();
+
+  // =========================
+  // チケット情報抽出
+  // =========================
+
+  const ticketEvents = events
+  .map(event => {
+
+    const ticketDate = extractTicketDate(event.ticket, event.date);
+
+    if(!ticketDate) return null;
+
+    return {
+      ...event,
+      ticketDate
+    };
+
+  })
+    .filter(Boolean)
+    .sort((a,b)=>a.ticketDate - b.ticketDate);
+
+  if(ticketEvents.length === 0){
+    box.innerHTML = "";
+    return;
+  }
+
+  // =========================
+  // 今日の発売
+  // =========================
+
+  const todayTickets = ticketEvents.filter(t => {
+
+    return (
+      t.ticketDate.getFullYear() === now.getFullYear() &&
+      t.ticketDate.getMonth() === now.getMonth() &&
+      t.ticketDate.getDate() === now.getDate()
+    );
+
+  });
+
+  // 時刻順
+  todayTickets.sort((a,b)=>a.ticketDate - b.ticketDate);
+
+  // =========================
+  // 今後3件
+  // =========================
+
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+  const upcomingTickets = ticketEvents
+    .filter(t => t.ticketDate >= tomorrowStart)
+    .slice(0,3);
+
+  let html = "";
+
+  // =========================
+  // TODAY TICKET
+  // =========================
+
+  if(todayTickets.length > 0){
+
+    html += `
+    <div class="event-highlight-card">
+
+      <div class="highlight-content">
+
+        <div class="highlight-text">
+
+          <div class="highlight-label">
+            🎫 本日発売のチケット
+          </div>
+    `;
+
+          todayTickets.forEach(ticket => {
+
+      html += `
+      <div style="margin-top:12px;">
+
+        <div class="highlight-content">
+
+          <div class="highlight-text">
+
+            <div class="highlight-title">
+              ${ticket.title}
+            </div>
+
+            <div class="highlight-meta">
+              ⏰ ${ticket.ticketDate.toLocaleTimeString("ja-JP",{
+                hour:"2-digit",
+                minute:"2-digit"
+              })}<br>
+
+              📅 LIVE ${ticket.date}<br>
+
+              📍 ${ticket.venue || "会場未定"}
+            </div>
+
+            ${
+            (ticket.ticketLink || ticket.ticketUrl)
+            ? `
+            <a href="${ticket.ticketLink || ticket.ticketUrl}"
+            target="_blank"
+            style="display:inline-block;margin-top:6px;">
+            チケットはこちら
+            </a>
+            `
+            : ""
+            }
+
+          </div>
+
+          ${
+            ticket.images && ticket.images.length > 0
+            ? `
+            <div class="highlight-thumb">
+              <img src="${ticket.images[0]}">
+            </div>
+            `
+            : ""
+          }
+
+        </div>
+
+      </div>
+      `;
+
+    });
+
+    html += `
+        </div>
+      </div>
+    </div>
+    `;
+  }
+
+  // =========================
+  // UPCOMING
+  // =========================
+
+  if(upcomingTickets.length > 0){
+
+    html += `
+    <div class="event-highlight-card"
+         style="margin-top:14px;">
+
+      <div class="highlight-content">
+
+        <div class="highlight-text">
+
+          <div class="highlight-label">
+            🎫 UPCOMING TICKETS
+          </div>
+    `;
+    
+    upcomingTickets.forEach(ticket => {
+      
+      html += `
+  <div style="
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px solid rgba(0,0,0,0.08);
+  ">
+
+    <div class="highlight-title">
+      ${ticket.ticketDate.toLocaleDateString("ja-JP",{
+        month:"numeric",
+        day:"numeric"
+      })}
+      ${ticket.ticketDate.toLocaleTimeString("ja-JP",{
+        hour:"2-digit",
+        minute:"2-digit"
+      })}
+     　${ticket.title}
+    </div>
+
+    <div class="highlight-meta">
+      📅 LIVE ${ticket.date}
+     　📍 ${ticket.venue || "会場未定"}
+    </div>
+
+  </div>
+  `;
+
+});
+
+    html += `
+        </div>
+      </div>
+    </div>
+    `;
+  }
+
+  box.innerHTML = html;
 }
 
 </script>
