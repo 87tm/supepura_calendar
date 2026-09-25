@@ -311,7 +311,7 @@ body {
   color: #ffffff;
   text-align: center;
   text-shadow:
-    0 2px 6px rgba(0,0,0,0.35);
+    0 3px 9px rgba(0,0,0,0.75);
 }
 
 /* ===== 月切り替えボタン ===== */
@@ -349,7 +349,7 @@ body {
       rgba(255,255,255,0.30),
       rgba(255,255,255,0.30)
     ),
-    url("images/IMG_8572.jpg");
+    url("images/IMG_5834.jpg");
 
   background-size: 100% auto;     /* ← 横幅を必ず表示 */
   background-position: top center;
